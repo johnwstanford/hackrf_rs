@@ -5,9 +5,6 @@ use libc::{c_char, size_t};
 extern {
 
 	fn hackrf_device_list() -> *const DeviceListStruct;
-
-	// extern ADDAPI int ADDCALL hackrf_device_list_open(hackrf_device_list_t *list, int idx, hackrf_device** device);
-	
 	fn hackrf_device_list_free(list:*const DeviceListStruct); 
 
 }
@@ -44,7 +41,11 @@ impl DeviceList {
 		Ok(DeviceList { handle })
 	}
 
-	pub fn get_entries(&self) -> Result<Vec<(String, HackrfUsbBoardId, usize)>, &'static str> {
+	pub fn open(&self, idx:i32) -> Result<crate::device::Device, &'static str> {
+		crate::device::Device::new(self.handle, idx)
+	}
+
+	pub fn get_entries(&self) -> Result<Vec<(usize, String, HackrfUsbBoardId, usize)>, &'static str> {
 
 		let n:usize = self.num_devices() as usize;
 
@@ -52,12 +53,12 @@ impl DeviceList {
 		let board_ids:&[HackrfUsbBoardId] = unsafe { std::slice::from_raw_parts((*self.handle).usb_board_ids,    n) };
 		let usb_idx:&[usize]              = unsafe { std::slice::from_raw_parts((*self.handle).usb_device_index, n) };
 		
-		let mut ans:Vec<(String, HackrfUsbBoardId, usize)> = vec![];
+		let mut ans:Vec<(usize, String, HackrfUsbBoardId, usize)> = vec![];
 		for idx in 0..n {
 
 			let ser_num  = unsafe { crate::util::cstr_ptr_to_string(ser_nums[idx]) };
 
-			ans.push((ser_num, board_ids[idx], usb_idx[idx]))
+			ans.push((idx, ser_num, board_ids[idx], usb_idx[idx]))
 		}
 
 		Ok(ans)

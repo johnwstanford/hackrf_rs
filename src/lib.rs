@@ -1,8 +1,7 @@
 
-use std::ffi::CStr;
-
 use libc::c_char;
 
+#[repr(C)]
 #[derive(Debug)]
 pub enum HackrfError {
 	Success             = 0,
@@ -23,6 +22,7 @@ pub enum HackrfError {
 pub mod util;
 
 pub mod device_list;
+pub mod device;
 
 #[derive(Debug, Default)]
 pub struct HackrfContext {
@@ -43,17 +43,11 @@ impl HackrfContext {
 	}
 
 	pub fn library_version(&self) -> Result<String, &'static str> {
-		let char_ptr = unsafe { hackrf_library_version() };
-		let cstr = unsafe { CStr::from_ptr(char_ptr) };
-		let rstr:&str = cstr.to_str().map_err(|_| "CStr to String conversion failed")?;
-		Ok(rstr.to_owned())
+		Ok(unsafe { util::cstr_ptr_to_string(hackrf_library_version()) })
 	}
 
 	pub fn library_release(&self) -> Result<String, &'static str> {
-		let char_ptr = unsafe { hackrf_library_release() };
-		let cstr = unsafe { CStr::from_ptr(char_ptr) };
-		let rstr:&str = cstr.to_str().map_err(|_| "CStr to String conversion failed")?;
-		Ok(rstr.to_owned())
+		Ok(unsafe { util::cstr_ptr_to_string(hackrf_library_release()) })
 	}
 
 }
@@ -78,7 +72,6 @@ extern {
 
 	// extern ADDAPI int ADDCALL hackrf_open(hackrf_device** device);
 	// extern ADDAPI int ADDCALL hackrf_open_by_serial(const char* const desired_serial_number, hackrf_device** device);
-	// extern ADDAPI int ADDCALL hackrf_close(hackrf_device* device);
 	 
 	// extern ADDAPI int ADDCALL hackrf_start_rx(hackrf_device* device, hackrf_sample_block_cb_fn callback, void* rx_ctx);
 	// extern ADDAPI int ADDCALL hackrf_stop_rx(hackrf_device* device);
@@ -86,9 +79,6 @@ extern {
 	// extern ADDAPI int ADDCALL hackrf_start_tx(hackrf_device* device, hackrf_sample_block_cb_fn callback, void* tx_ctx);
 	// extern ADDAPI int ADDCALL hackrf_stop_tx(hackrf_device* device);
 
-	/* return HACKRF_TRUE if success */
-	// extern ADDAPI int ADDCALL hackrf_is_streaming(hackrf_device* device);
-	 
 	// extern ADDAPI int ADDCALL hackrf_max2837_read(hackrf_device* device, uint8_t register_number, uint16_t* value);
 	// extern ADDAPI int ADDCALL hackrf_max2837_write(hackrf_device* device, uint8_t register_number, uint16_t value);
 	 
