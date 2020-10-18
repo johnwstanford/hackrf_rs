@@ -13,6 +13,7 @@ extern {
 }
 
 #[repr(C)]
+#[derive(Debug, Clone, Copy)]
 pub enum HackrfUsbBoardId {
 	Jawbreaker = 0x604B,
 	HackrfOne  = 0x6089,
@@ -41,6 +42,25 @@ impl DeviceList {
 	pub fn new() -> Result<Self, &'static str> {
 		let handle:*const DeviceListStruct = unsafe { hackrf_device_list() };
 		Ok(DeviceList { handle })
+	}
+
+	pub fn get_entries(&self) -> Result<Vec<(String, HackrfUsbBoardId, usize)>, &'static str> {
+
+		let n:usize = self.num_devices() as usize;
+
+		let ser_nums:&[*const c_char]     = unsafe { std::slice::from_raw_parts((*self.handle).serial_numbers,   n) };
+		let board_ids:&[HackrfUsbBoardId] = unsafe { std::slice::from_raw_parts((*self.handle).usb_board_ids,    n) };
+		let usb_idx:&[usize]              = unsafe { std::slice::from_raw_parts((*self.handle).usb_device_index, n) };
+		
+		let mut ans:Vec<(String, HackrfUsbBoardId, usize)> = vec![];
+		for idx in 0..n {
+
+			let ser_num  = unsafe { crate::util::cstr_ptr_to_string(ser_nums[idx]) };
+
+			ans.push((ser_num, board_ids[idx], usb_idx[idx]))
+		}
+
+		Ok(ans)
 	}
 
 	pub fn num_devices(&self)     -> i32 { unsafe { (*self.handle).devicecount     } }

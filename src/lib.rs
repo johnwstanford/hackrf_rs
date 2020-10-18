@@ -20,6 +20,8 @@ pub enum HackrfError {
 	ErrOther            = -9999,
 }
 
+pub mod util;
+
 pub mod device_list;
 
 #[derive(Debug, Default)]

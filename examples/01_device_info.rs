@@ -11,6 +11,8 @@ fn main() -> Result<(), &'static str> {
 	println!("Device count: {}", device_list.num_devices());
 	println!("USB device count: {}", device_list.num_usb_devices());
 
+	println!("{:?}", device_list.get_entries());
+
 	Ok(())
 
 }
