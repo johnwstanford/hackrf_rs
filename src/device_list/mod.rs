@@ -7,7 +7,8 @@ extern {
 	fn hackrf_device_list() -> *const DeviceListStruct;
 
 	// extern ADDAPI int ADDCALL hackrf_device_list_open(hackrf_device_list_t *list, int idx, hackrf_device** device);
-	// extern ADDAPI void ADDCALL hackrf_device_list_free(hackrf_device_list_t *list); 
+	
+	fn hackrf_device_list_free(list:*const DeviceListStruct); 
 
 }
 
@@ -44,5 +45,13 @@ impl DeviceList {
 
 	pub fn num_devices(&self)     -> i32 { unsafe { (*self.handle).devicecount     } }
 	pub fn num_usb_devices(&self) -> i32 { unsafe { (*self.handle).usb_devicecount } }
+
+}
+
+impl std::ops::Drop for DeviceList {
+
+	fn drop(&mut self) {
+		unsafe { hackrf_device_list_free(self.handle); }
+	}
 
 }

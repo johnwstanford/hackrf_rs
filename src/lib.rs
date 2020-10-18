@@ -1,4 +1,8 @@
 
+use std::ffi::CStr;
+
+use libc::c_char;
+
 #[derive(Debug)]
 pub enum HackrfError {
 	Success             = 0,
@@ -36,6 +40,20 @@ impl HackrfContext {
 		device_list::DeviceList::new()
 	}
 
+	pub fn library_version(&self) -> Result<String, &'static str> {
+		let char_ptr = unsafe { hackrf_library_version() };
+		let cstr = unsafe { CStr::from_ptr(char_ptr) };
+		let rstr:&str = cstr.to_str().map_err(|_| "CStr to String conversion failed")?;
+		Ok(rstr.to_owned())
+	}
+
+	pub fn library_release(&self) -> Result<String, &'static str> {
+		let char_ptr = unsafe { hackrf_library_release() };
+		let cstr = unsafe { CStr::from_ptr(char_ptr) };
+		let rstr:&str = cstr.to_str().map_err(|_| "CStr to String conversion failed")?;
+		Ok(rstr.to_owned())
+	}
+
 }
 
 impl std::ops::Drop for HackrfContext {
@@ -53,8 +71,8 @@ extern {
 	fn hackrf_init() -> i32;
 	fn hackrf_exit() -> i32;
 
-	// extern ADDAPI const char* ADDCALL hackrf_library_version();
-	// extern ADDAPI const char* ADDCALL hackrf_library_release();
+	fn hackrf_library_version() -> *const c_char;
+	fn hackrf_library_release() -> *const c_char;
 
 	// extern ADDAPI int ADDCALL hackrf_open(hackrf_device** device);
 	// extern ADDAPI int ADDCALL hackrf_open_by_serial(const char* const desired_serial_number, hackrf_device** device);
