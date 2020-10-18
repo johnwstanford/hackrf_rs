@@ -42,7 +42,7 @@ impl DeviceList {
 	}
 
 	pub fn open(&self, idx:i32) -> Result<crate::device::Device, &'static str> {
-		crate::device::Device::new(self.handle, idx)
+		crate::device::Device::new_from_list(self.handle, idx)
 	}
 
 	pub fn get_entries(&self) -> Result<Vec<(usize, String, HackrfUsbBoardId, usize)>, &'static str> {

@@ -70,9 +70,6 @@ extern {
 	fn hackrf_library_version() -> *const c_char;
 	fn hackrf_library_release() -> *const c_char;
 
-	// extern ADDAPI int ADDCALL hackrf_open(hackrf_device** device);
-	// extern ADDAPI int ADDCALL hackrf_open_by_serial(const char* const desired_serial_number, hackrf_device** device);
-	 
 	// extern ADDAPI int ADDCALL hackrf_start_rx(hackrf_device* device, hackrf_sample_block_cb_fn callback, void* rx_ctx);
 	// extern ADDAPI int ADDCALL hackrf_stop_rx(hackrf_device* device);
 	 

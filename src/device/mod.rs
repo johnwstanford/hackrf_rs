@@ -5,7 +5,9 @@ use crate::device_list::DeviceListStruct;
 extern {
 
 	fn hackrf_device_list_open(list:*const DeviceListStruct, idx:i32, device:&mut usize) -> i32;	
-
+	fn hackrf_open(device:&mut usize) -> i32;
+	// extern ADDAPI int ADDCALL hackrf_open_by_serial(const char* const desired_serial_number, hackrf_device** device);
+	 
 	fn hackrf_is_streaming(device:usize) -> i32;
 
 	fn hackrf_close(device:usize) -> i32;
@@ -19,11 +21,19 @@ pub struct Device {
 
 impl Device {
 
-	pub fn new(list:*const DeviceListStruct, idx:i32) -> Result<Self, &'static str> {
+	pub fn new() -> Result<Self, &'static str> {
+		let mut handle:usize = 0;
+		match unsafe { hackrf_open(&mut handle) } {
+			0 => Ok(Self{ handle }),
+			_ => Err("Unable to open HackRF device")
+		}
+	}
+
+	pub fn new_from_list(list:*const DeviceListStruct, idx:i32) -> Result<Self, &'static str> {
 		let mut handle:usize = 0;
 		match unsafe { hackrf_device_list_open(list, idx, &mut handle) } {
 			0 => Ok(Self{ handle }),
-			_ => Err("Unable to open Hackrf device")
+			_ => Err("Unable to open HackRF device")
 		}
 	}
 
