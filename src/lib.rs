@@ -70,12 +70,6 @@ extern {
 	fn hackrf_library_version() -> *const c_char;
 	fn hackrf_library_release() -> *const c_char;
 
-	// extern ADDAPI int ADDCALL hackrf_start_rx(hackrf_device* device, hackrf_sample_block_cb_fn callback, void* rx_ctx);
-	// extern ADDAPI int ADDCALL hackrf_stop_rx(hackrf_device* device);
-	 
-	// extern ADDAPI int ADDCALL hackrf_start_tx(hackrf_device* device, hackrf_sample_block_cb_fn callback, void* tx_ctx);
-	// extern ADDAPI int ADDCALL hackrf_stop_tx(hackrf_device* device);
-
 	// extern ADDAPI int ADDCALL hackrf_max2837_read(hackrf_device* device, uint8_t register_number, uint16_t* value);
 	// extern ADDAPI int ADDCALL hackrf_max2837_write(hackrf_device* device, uint8_t register_number, uint16_t value);
 	 

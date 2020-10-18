@@ -30,10 +30,36 @@ extern {
 	/* antenna port power control */
 	// extern ADDAPI int ADDCALL hackrf_set_antenna_enable(hackrf_device* device, const uint8_t value);
 
+	fn hackrf_start_rx(device:usize, callback: extern fn(*mut HackrfTransfer) -> i32, rx_ctx:*mut u8) -> i32;
+	fn hackrf_stop_rx(device:usize) -> i32;
+	 
+	// extern ADDAPI int ADDCALL hackrf_start_tx(hackrf_device* device, hackrf_sample_block_cb_fn callback, void* tx_ctx);
+	// extern ADDAPI int ADDCALL hackrf_stop_tx(hackrf_device* device);
+
 	fn hackrf_is_streaming(device:usize) -> i32;
 
 	fn hackrf_close(device:usize) -> i32;
 
+}
+
+#[repr(C)]
+struct HackrfTransfer {
+	device:usize,
+	buffer:*mut u8,
+	buffer_length:i32,
+	valid_length:i32,
+	rx_ctx:*mut u8,
+	tx_ctx:*mut u8
+}
+
+extern fn rx_callback(raw_xfer:*mut HackrfTransfer) -> i32 {
+	let xfer:&mut HackrfTransfer = unsafe { raw_xfer.as_mut().unwrap() };
+
+	println!("xfer.buffer_length = {}", xfer.buffer_length);
+	println!("xfer.valid_length = {}", xfer.valid_length);
+	println!("xfer.rx_ctx = {:?}", xfer.rx_ctx);
+
+	0
 }
 
 #[derive(Debug)]
@@ -56,6 +82,20 @@ impl Device {
 		match unsafe { hackrf_device_list_open(list, idx, &mut handle) } {
 			0 => Ok(Self{ handle }),
 			_ => Err("Unable to open HackRF device")
+		}
+	}
+
+	pub fn start_rx(&mut self) -> Result<(), &'static str> {
+		match unsafe { hackrf_start_rx(self.handle, rx_callback, 0x33 as *mut u8) } {
+			0 => Ok(()),
+			_ => Err("Unable to start receive")
+		}
+	}
+
+	pub fn stop_rx(&mut self) -> Result<(), &'static str> {
+		match unsafe { hackrf_stop_rx(self.handle) } {
+			0 => Ok(()),
+			_ => Err("Unable to stop receive")
 		}
 	}
 

@@ -1,4 +1,7 @@
 
+use std::thread;
+use std::time::Duration;
+
 use hackrf_rs::HackrfContext;
 use hackrf_rs::device;
 
@@ -13,6 +16,12 @@ fn main() -> Result<(), &'static str> {
 
 	dev.set_lna_gain(40)?;
 	dev.set_vga_gain(20)?;
+
+	dev.start_rx()?;
+
+	thread::sleep(Duration::from_secs_f32(1.0));
+
+	dev.stop_rx()?;
 
 	Ok(())
 
