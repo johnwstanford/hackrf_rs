@@ -6,7 +6,10 @@ fn main() -> Result<(), &'static str> {
 
 	let _hackrf = HackrfContext::new()?;
 
-	let dev = device::Device::new()?;
+	let mut dev = device::Device::new()?;
+
+	dev.set_sample_rate(1.0e6)?;
+	dev.set_freq(25_000_000)?;
 
 	Ok(())
 
