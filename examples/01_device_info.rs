@@ -1,15 +1,13 @@
 
-use hackrf_rs::DeviceList;
+use hackrf_rs::HackrfContext;
 
 fn main() -> Result<(), &'static str> {
 
-	hackrf_rs::init()?;
+	let hackrf = HackrfContext::new()?;
 
-	let device_list = DeviceList::new()?;
+	let device_list = hackrf.device_list()?;
 
 	println!("{:X}", device_list.handle);
-
-	hackrf_rs::exit()?;
 
 	Ok(())
 

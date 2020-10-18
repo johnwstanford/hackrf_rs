@@ -16,18 +16,36 @@ pub enum HackrfError {
 	ErrOther            = -9999,
 }
 
-pub fn init() -> Result<(), &'static str> {
-	match unsafe { hackrf_init() } {
-		0 => Ok(()),
-		_ => Err("Nonzero return value from init()")
-	}
+pub mod device_list;
+
+#[derive(Debug, Default)]
+pub struct HackrfContext {
+	pub hackrf_info:Option<()>
 }
 
-pub fn exit() -> Result<(), &'static str> {
-	match unsafe { hackrf_exit() } {
-		0 => Ok(()),
-		_ => Err("Nonzero return value from exit()")
+impl HackrfContext {
+
+	pub fn new() -> Result<Self, &'static str> {
+		match unsafe { hackrf_init() } {
+			0 => Ok(Self::default()),
+			_ => Err("Nonzero return value from init()")
+		}
 	}
+
+	pub fn device_list(&self) -> Result<device_list::DeviceList, &'static str> {
+		device_list::DeviceList::new()
+	}
+
+}
+
+impl std::ops::Drop for HackrfContext {
+
+	fn drop(&mut self) {
+		// TODO: consider checking this return value
+		let _return_val = unsafe { hackrf_exit() };
+	}
+
+
 }
 
 #[link(name = "hackrf")] 
@@ -37,9 +55,6 @@ extern {
 
 	// extern ADDAPI const char* ADDCALL hackrf_library_version();
 	// extern ADDAPI const char* ADDCALL hackrf_library_release();
-
-	// extern ADDAPI hackrf_device_list_t* ADDCALL hackrf_device_list();
-	fn hackrf_device_list() -> usize;
 
 	// extern ADDAPI int ADDCALL hackrf_device_list_open(hackrf_device_list_t *list, int idx, hackrf_device** device);
 	// extern ADDAPI void ADDCALL hackrf_device_list_free(hackrf_device_list_t *list);
@@ -139,16 +154,3 @@ extern {
 	// extern ADDAPI int ADDCALL hackrf_reset(hackrf_device* device);
 }
 
-#[derive(Debug)]
-pub struct DeviceList {
-	pub handle:usize
-}
-
-impl DeviceList {
-	
-	pub fn new() -> Result<Self, &'static str> {
-		let handle:usize = unsafe { hackrf_device_list() };
-		Ok(Self{ handle })
-	}
-
-}
