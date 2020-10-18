@@ -1,6 +1,10 @@
 
+use std::sync::Mutex;
+
 use crate::device_list::DeviceListStruct;
 
+// *const Mutex<usize> is not a proper C type, but it'll only be passed back to Rust code, so it's okay
+#[allow(improper_ctypes)]
 #[link(name = "hackrf")]
 extern {
 
@@ -30,7 +34,7 @@ extern {
 	/* antenna port power control */
 	// extern ADDAPI int ADDCALL hackrf_set_antenna_enable(hackrf_device* device, const uint8_t value);
 
-	fn hackrf_start_rx(device:usize, callback: extern fn(*mut HackrfTransfer) -> i32, rx_ctx:*mut u8) -> i32;
+	fn hackrf_start_rx(device:usize, callback: extern fn(*mut HackrfTransfer) -> i32, rx_ctx:*const Mutex<usize>) -> i32;
 	fn hackrf_stop_rx(device:usize) -> i32;
 	 
 	// extern ADDAPI int ADDCALL hackrf_start_tx(hackrf_device* device, hackrf_sample_block_cb_fn callback, void* tx_ctx);
@@ -48,45 +52,63 @@ struct HackrfTransfer {
 	buffer:*mut u8,
 	buffer_length:i32,
 	valid_length:i32,
-	rx_ctx:*mut u8,
-	tx_ctx:*mut u8
+	rx_ctx:*const Mutex<usize>,
+	tx_ctx:*const Mutex<usize>
 }
 
 extern fn rx_callback(raw_xfer:*mut HackrfTransfer) -> i32 {
-	let xfer:&mut HackrfTransfer = unsafe { raw_xfer.as_mut().unwrap() };
+	let xfer:&mut HackrfTransfer = match unsafe { raw_xfer.as_mut() } {
+		Some(xf) => xf,
+		None     => return -1	// This is caused by a null pointer being passed to this callback
+	};
 
-	println!("xfer.buffer_length = {}", xfer.buffer_length);
-	println!("xfer.valid_length = {}", xfer.valid_length);
-	println!("xfer.rx_ctx = {:?}", xfer.rx_ctx);
+	let rx_state:&Mutex<usize> = match unsafe { xfer.rx_ctx.as_ref() } {
+		Some(mutex) => mutex,
+		None		=> return -1
+	};
 
-	0
+	match rx_state.lock() {
+		Ok(mut guard) => {
+			*guard += xfer.valid_length as usize;
+
+			println!("{} bytes so far", guard);
+
+			0
+
+		},
+		_ => -1
+	}
+
 }
 
 #[derive(Debug)]
 pub struct Device {
-	handle:usize
+	handle:usize,
+	rx_state:Mutex<usize>,
 }
 
 impl Device {
 
 	pub fn new() -> Result<Self, &'static str> {
 		let mut handle:usize = 0;
+		let rx_state = Mutex::new(0);
 		match unsafe { hackrf_open(&mut handle) } {
-			0 => Ok(Self{ handle }),
+			0 => Ok(Self{ handle, rx_state }),
 			_ => Err("Unable to open HackRF device")
 		}
 	}
 
 	pub fn new_from_list(list:*const DeviceListStruct, idx:i32) -> Result<Self, &'static str> {
 		let mut handle:usize = 0;
+		let rx_state = Mutex::new(0);
 		match unsafe { hackrf_device_list_open(list, idx, &mut handle) } {
-			0 => Ok(Self{ handle }),
+			0 => Ok(Self{ handle, rx_state }),
 			_ => Err("Unable to open HackRF device")
 		}
 	}
 
 	pub fn start_rx(&mut self) -> Result<(), &'static str> {
-		match unsafe { hackrf_start_rx(self.handle, rx_callback, 0x33 as *mut u8) } {
+		match unsafe { hackrf_start_rx(self.handle, rx_callback, &self.rx_state as *const Mutex<usize>) } {
 			0 => Ok(()),
 			_ => Err("Unable to start receive")
 		}
