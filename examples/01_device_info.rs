@@ -7,7 +7,8 @@ fn main() -> Result<(), &'static str> {
 
 	let device_list = hackrf.device_list()?;
 
-	println!("{:X}", device_list.handle);
+	println!("Device count: {}", device_list.num_devices());
+	println!("USB device count: {}", device_list.num_usb_devices());
 
 	Ok(())
 
