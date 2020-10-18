@@ -104,18 +104,6 @@ extern {
 
 	// extern ADDAPI int ADDCALL hackrf_board_partid_serialno_read(hackrf_device* device, read_partid_serialno_t* read_partid_serialno);
 
-	/* range 0-40 step 8d, IF gain in osmosdr  */
-	// extern ADDAPI int ADDCALL hackrf_set_lna_gain(hackrf_device* device, uint32_t value);
-
-	/* range 0-62 step 2db, BB gain in osmosdr */
-	// extern ADDAPI int ADDCALL hackrf_set_vga_gain(hackrf_device* device, uint32_t value);
-
-	/* range 0-47 step 1db */
-	// extern ADDAPI int ADDCALL hackrf_set_txvga_gain(hackrf_device* device, uint32_t value);
-
-	/* antenna port power control */
-	// extern ADDAPI int ADDCALL hackrf_set_antenna_enable(hackrf_device* device, const uint8_t value);
-
 	// extern ADDAPI const char* ADDCALL hackrf_error_name(enum hackrf_error errcode);
 	// extern ADDAPI const char* ADDCALL hackrf_board_id_name(enum hackrf_board_id board_id);
 	// extern ADDAPI const char* ADDCALL hackrf_usb_board_id_name(enum hackrf_usb_board_id usb_board_id);

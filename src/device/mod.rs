@@ -18,6 +18,18 @@ extern {
 	// 		const uint64_t if_freq_hz, const uint64_t lo_freq_hz,
 	// 		const enum rf_path_filter path);
 
+	/* range 0-40 step 8d, IF gain in osmosdr  */
+	fn hackrf_set_lna_gain(device:usize, value:u32) -> i32;
+
+	/* range 0-62 step 2db, BB gain in osmosdr */
+	fn hackrf_set_vga_gain(device:usize, value:u32) -> i32;
+
+	/* range 0-47 step 1db */
+	// extern ADDAPI int ADDCALL hackrf_set_txvga_gain(hackrf_device* device, uint32_t value);
+
+	/* antenna port power control */
+	// extern ADDAPI int ADDCALL hackrf_set_antenna_enable(hackrf_device* device, const uint8_t value);
+
 	fn hackrf_is_streaming(device:usize) -> i32;
 
 	fn hackrf_close(device:usize) -> i32;
@@ -45,6 +57,24 @@ impl Device {
 			0 => Ok(Self{ handle }),
 			_ => Err("Unable to open HackRF device")
 		}
+	}
+
+	pub fn set_vga_gain(&mut self, vga_gain_db:u32) -> Result<(), &'static str> {
+		if      vga_gain_db > 62   { Err("VGA gain must be in the range of 0-62 [dB]") }
+		else if vga_gain_db%2 != 0 { Err("VGA gain can only be set in increments of 2 [dB]") }
+		else { match unsafe { hackrf_set_vga_gain(self.handle, vga_gain_db) } {
+			0 => Ok(()),
+			_ => Err("Unable to set VGA gain")
+		}}
+	}
+
+	pub fn set_lna_gain(&mut self, lna_gain_db:u32) -> Result<(), &'static str> {
+		if      lna_gain_db > 40   { Err("LNA gain must be in the range of 0-40 [dB]") }
+		else if lna_gain_db%8 != 0 { Err("LNA gain can only be set in increments of 8 [dB]") }
+		else { match unsafe { hackrf_set_lna_gain(self.handle, lna_gain_db) } {
+			0 => Ok(()),
+			_ => Err("Unable to set LNA gain")
+		}}
 	}
 
 	pub fn set_freq(&mut self, freq_hz:u64) -> Result<(), &'static str> {

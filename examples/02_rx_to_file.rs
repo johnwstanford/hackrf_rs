@@ -11,6 +11,9 @@ fn main() -> Result<(), &'static str> {
 	dev.set_sample_rate(1.0e6)?;
 	dev.set_freq(25_000_000)?;
 
+	dev.set_lna_gain(40)?;
+	dev.set_vga_gain(20)?;
+
 	Ok(())
 
 }
