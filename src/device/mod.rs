@@ -56,11 +56,7 @@ struct HackrfTransfer {
 	tx_ctx:*const Mutex<RxState>
 }
 
-#[derive(Debug, Default)]
-pub struct RxState {
-	pub bytes_read: usize,
-	pub bytes:Vec<u8>
-}
+type RxState = Vec<u8>;
 
 extern fn rx_callback(raw_xfer:*mut HackrfTransfer) -> i32 {
 	let xfer:&mut HackrfTransfer = match unsafe { raw_xfer.as_mut() } {
@@ -77,9 +73,9 @@ extern fn rx_callback(raw_xfer:*mut HackrfTransfer) -> i32 {
 
 	match rx_state.lock() {
 		Ok(mut guard) => {
-			guard.bytes_read += byte_slice.len();
+			guard.extend_from_slice(byte_slice);
 
-			println!("{} bytes so far", guard.bytes_read);
+			println!("{} bytes so far", guard.len());
 
 			0
 

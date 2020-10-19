@@ -25,7 +25,7 @@ fn main() -> Result<(), &'static str> {
 
 		let rx_state = dev.stop_rx()?;
 
-		println!("{} total bytes read", rx_state.bytes_read);
+		println!("{} total bytes", rx_state.len());
 
 	}
 
