@@ -58,7 +58,8 @@ struct HackrfTransfer {
 
 #[derive(Debug, Default)]
 pub struct RxState {
-	pub bytes_read: usize
+	pub bytes_read: usize,
+	pub bytes:Vec<u8>
 }
 
 extern fn rx_callback(raw_xfer:*mut HackrfTransfer) -> i32 {
@@ -72,9 +73,11 @@ extern fn rx_callback(raw_xfer:*mut HackrfTransfer) -> i32 {
 		None		=> return -1
 	};
 
+	let byte_slice:&[u8] = unsafe { std::slice::from_raw_parts(xfer.buffer, xfer.valid_length as usize) };
+
 	match rx_state.lock() {
 		Ok(mut guard) => {
-			guard.bytes_read += xfer.valid_length as usize;
+			guard.bytes_read += byte_slice.len();
 
 			println!("{} bytes so far", guard.bytes_read);
 
