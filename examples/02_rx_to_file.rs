@@ -21,7 +21,9 @@ fn main() -> Result<(), &'static str> {
 
 	thread::sleep(Duration::from_secs_f32(1.0));
 
-	dev.stop_rx()?;
+	let bytes_read = dev.stop_rx()?;
+
+	println!("{} total bytes read", bytes_read);
 
 	Ok(())
 

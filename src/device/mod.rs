@@ -84,39 +84,38 @@ extern fn rx_callback(raw_xfer:*mut HackrfTransfer) -> i32 {
 #[derive(Debug)]
 pub struct Device {
 	handle:usize,
-	rx_state:Mutex<usize>,
+	rx_state:Option<Mutex<usize>>,
 }
 
 impl Device {
 
 	pub fn new() -> Result<Self, &'static str> {
 		let mut handle:usize = 0;
-		let rx_state = Mutex::new(0);
 		match unsafe { hackrf_open(&mut handle) } {
-			0 => Ok(Self{ handle, rx_state }),
+			0 => Ok(Self{ handle, rx_state: None }),
 			_ => Err("Unable to open HackRF device")
 		}
 	}
 
 	pub fn new_from_list(list:*const DeviceListStruct, idx:i32) -> Result<Self, &'static str> {
 		let mut handle:usize = 0;
-		let rx_state = Mutex::new(0);
 		match unsafe { hackrf_device_list_open(list, idx, &mut handle) } {
-			0 => Ok(Self{ handle, rx_state }),
+			0 => Ok(Self{ handle, rx_state: None }),
 			_ => Err("Unable to open HackRF device")
 		}
 	}
 
 	pub fn start_rx(&mut self) -> Result<(), &'static str> {
-		match unsafe { hackrf_start_rx(self.handle, rx_callback, &self.rx_state as *const Mutex<usize>) } {
+		self.rx_state = Some(Mutex::new(0));
+		match unsafe { hackrf_start_rx(self.handle, rx_callback, self.rx_state.as_ref().unwrap() as *const Mutex<usize>) } {
 			0 => Ok(()),
 			_ => Err("Unable to start receive")
 		}
 	}
 
-	pub fn stop_rx(&mut self) -> Result<(), &'static str> {
+	pub fn stop_rx(&mut self) -> Result<usize, &'static str> {
 		match unsafe { hackrf_stop_rx(self.handle) } {
-			0 => Ok(()),
+			0 => Ok(self.rx_state.take().unwrap().into_inner().unwrap()),
 			_ => Err("Unable to stop receive")
 		}
 	}
