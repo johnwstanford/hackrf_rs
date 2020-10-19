@@ -17,13 +17,17 @@ fn main() -> Result<(), &'static str> {
 	dev.set_lna_gain(40)?;
 	dev.set_vga_gain(20)?;
 
-	dev.start_rx()?;
+	for _ in 0..2 {
+	
+		dev.start_rx()?;
 
-	thread::sleep(Duration::from_secs_f32(1.0));
+		thread::sleep(Duration::from_secs_f32(1.0));
 
-	let bytes_read = dev.stop_rx()?;
+		let rx_state = dev.stop_rx()?;
 
-	println!("{} total bytes read", bytes_read);
+		println!("{} total bytes read", rx_state.bytes_read);
+
+	}
 
 	Ok(())
 

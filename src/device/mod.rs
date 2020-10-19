@@ -34,7 +34,7 @@ extern {
 	/* antenna port power control */
 	// extern ADDAPI int ADDCALL hackrf_set_antenna_enable(hackrf_device* device, const uint8_t value);
 
-	fn hackrf_start_rx(device:usize, callback: extern fn(*mut HackrfTransfer) -> i32, rx_ctx:*const Mutex<usize>) -> i32;
+	fn hackrf_start_rx(device:usize, callback: extern fn(*mut HackrfTransfer) -> i32, rx_ctx:*const Mutex<RxState>) -> i32;
 	fn hackrf_stop_rx(device:usize) -> i32;
 	 
 	// extern ADDAPI int ADDCALL hackrf_start_tx(hackrf_device* device, hackrf_sample_block_cb_fn callback, void* tx_ctx);
@@ -52,8 +52,13 @@ struct HackrfTransfer {
 	buffer:*mut u8,
 	buffer_length:i32,
 	valid_length:i32,
-	rx_ctx:*const Mutex<usize>,
-	tx_ctx:*const Mutex<usize>
+	rx_ctx:*const Mutex<RxState>,
+	tx_ctx:*const Mutex<RxState>
+}
+
+#[derive(Debug, Default)]
+pub struct RxState {
+	pub bytes_read: usize
 }
 
 extern fn rx_callback(raw_xfer:*mut HackrfTransfer) -> i32 {
@@ -62,16 +67,16 @@ extern fn rx_callback(raw_xfer:*mut HackrfTransfer) -> i32 {
 		None     => return -1	// This is caused by a null pointer being passed to this callback
 	};
 
-	let rx_state:&Mutex<usize> = match unsafe { xfer.rx_ctx.as_ref() } {
+	let rx_state:&Mutex<RxState> = match unsafe { xfer.rx_ctx.as_ref() } {
 		Some(mutex) => mutex,
 		None		=> return -1
 	};
 
 	match rx_state.lock() {
 		Ok(mut guard) => {
-			*guard += xfer.valid_length as usize;
+			guard.bytes_read += xfer.valid_length as usize;
 
-			println!("{} bytes so far", guard);
+			println!("{} bytes so far", guard.bytes_read);
 
 			0
 
@@ -84,7 +89,7 @@ extern fn rx_callback(raw_xfer:*mut HackrfTransfer) -> i32 {
 #[derive(Debug)]
 pub struct Device {
 	handle:usize,
-	rx_state:Option<Mutex<usize>>,
+	rx_state:Option<Mutex<RxState>>,
 }
 
 impl Device {
@@ -106,14 +111,14 @@ impl Device {
 	}
 
 	pub fn start_rx(&mut self) -> Result<(), &'static str> {
-		self.rx_state = Some(Mutex::new(0));
-		match unsafe { hackrf_start_rx(self.handle, rx_callback, self.rx_state.as_ref().unwrap() as *const Mutex<usize>) } {
+		self.rx_state = Some(Mutex::new(RxState::default()));
+		match unsafe { hackrf_start_rx(self.handle, rx_callback, self.rx_state.as_ref().unwrap() as *const Mutex<RxState>) } {
 			0 => Ok(()),
 			_ => Err("Unable to start receive")
 		}
 	}
 
-	pub fn stop_rx(&mut self) -> Result<usize, &'static str> {
+	pub fn stop_rx(&mut self) -> Result<RxState, &'static str> {
 		match unsafe { hackrf_stop_rx(self.handle) } {
 			0 => Ok(self.rx_state.take().unwrap().into_inner().unwrap()),
 			_ => Err("Unable to stop receive")
